@@ -1,8 +1,10 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 [RequireComponent (typeof (LineRenderer))]
 public class GrappleEffect : MonoBehaviour
 {
+    [Tooltip("The Origin of the grapple, Own transform is used if no value set.")]
+    public Transform Origin;
 	[Tooltip ("The speed of the entire effect.")]
 	public float Speed = 3f;
 	[Tooltip ("The speed of the spiral offset (relative to 'Speed').")]
@@ -51,22 +53,32 @@ public class GrappleEffect : MonoBehaviour
 		lineRenderer = GetComponent<LineRenderer> ();
 	}
 
-	public void DoGrapple ()
+    private void Start()
+    {
+        lineRenderer.enabled = false;
+        if (!Origin)
+        {
+            Origin = transform;
+        }
+    }
+
+    public void DoGrapple ()
 	{
 		RaycastHit hit;
-		if (lineRenderer.enabled = Physics.Raycast (transform.position, transform.forward, out hit))
+		if (lineRenderer.enabled = Physics.Raycast (Origin.position, Origin.forward, out hit))
 			DoGrapple (hit.point);
 	}
 
 	public void DoGrapple (Vector3 grapplePoint)
-	{
-		this.grapplePoint = grapplePoint;
+    {
+        this.grapplePoint = grapplePoint;
 		scaledTimeOffset = spiralTimeOffset = 0f;
 		if (lineRenderer.positionCount != Segments)
 			lineRenderer.positionCount = Segments;
 
 		lastGrappleTime = Time.time * 10f;
-	}
+        lineRenderer.enabled = true;
+    }
 
 	// I like this naming convention haha
 	public void StopGrapple ()
@@ -84,7 +96,7 @@ public class GrappleEffect : MonoBehaviour
 		if (!lineRenderer.enabled)
 			return;
 
-		var difference = grapplePoint - transform.position;
+		var difference = grapplePoint - Origin.position;
 		var direction = difference.normalized;
 		var distanceMultiplier = Mathf.Clamp01 (scaledTimeOffset * DistanceSpeed);
 		var distance = difference.magnitude * distanceMultiplier;
@@ -96,21 +108,21 @@ public class GrappleEffect : MonoBehaviour
 		for (int i = 0; i < lineRenderer.positionCount; i++)
 		{
 			var t = (float)i / lineRenderer.positionCount;
-			var position = transform.position;
+			var position = Origin.position;
 			var forwardOffset = direction * (t * distance);
 			position += forwardOffset;
 
 			var curveSamplePosition = forwardOffset.magnitude * Frequency - spiralTimeOffset;
 
-			var verticalOffset = transform.up * Curve.Evaluate (curveSamplePosition);
-			var horizontalOffset = transform.right * Curve.Evaluate (curveSamplePosition + HorizontalOffset);
+			var verticalOffset = Origin.up * Curve.Evaluate (curveSamplePosition);
+			var horizontalOffset = Origin.right * Curve.Evaluate (curveSamplePosition + HorizontalOffset);
 
 			verticalOffset *= Magnitude.y;
 			horizontalOffset *= Magnitude.x;
 
 			var noiseSamplePosition = -t * Scale + scaledTimeOffset + lastGrappleTime;
-			verticalOffset += transform.up * ((Mathf.PerlinNoise (0f, noiseSamplePosition) - 0.5f) * 2f * Strength);
-			horizontalOffset += transform.right * ((Mathf.PerlinNoise (noiseSamplePosition, 0f) - 0.5f) * 2f * Strength);
+			verticalOffset += Origin.up * ((Mathf.PerlinNoise (0f, noiseSamplePosition) - 0.5f) * 2f * Strength);
+			horizontalOffset += Origin.right * ((Mathf.PerlinNoise (noiseSamplePosition, 0f) - 0.5f) * 2f * Strength);
 
 			var magnitude = MagnitudeOverTime.Evaluate (scaledTimeOffset) * MagnitudeOverDistance.Evaluate (t);
 			verticalOffset *= magnitude;
