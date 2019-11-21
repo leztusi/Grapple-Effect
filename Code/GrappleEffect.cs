@@ -3,8 +3,8 @@ using UnityEngine;
 [RequireComponent (typeof (LineRenderer))]
 public class GrappleEffect : MonoBehaviour
 {
-    [Tooltip("The Origin of the grapple, Own transform is used if no value set.")]
-    public Transform Origin;
+    	[Tooltip("The Origin of the grapple, Own transform is used if no value set.")]
+    	public Transform Origin;
 	[Tooltip ("The speed of the entire effect.")]
 	public float Speed = 3f;
 	[Tooltip ("The speed of the spiral offset (relative to 'Speed').")]
@@ -71,6 +71,13 @@ public class GrappleEffect : MonoBehaviour
 
 	public void DoGrapple (Vector3 grapplePoint)
     {
+        lineRenderer.enabled = false;
+
+        for (int i = 0; i < lineRenderer.positionCount; i++)
+        {
+            lineRenderer.SetPosition(i, Origin.position);
+        }
+
         this.grapplePoint = grapplePoint;
 		scaledTimeOffset = spiralTimeOffset = 0f;
 		if (lineRenderer.positionCount != Segments)
